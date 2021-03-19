@@ -4,19 +4,23 @@ namespace FileManager
 {
     class MainClass
     {
+        static string fileSettingsName = "settings.ini";
         static void Main(string[] args)
         {
-            //Console.WindowHeight = 40;
+            int pauseOnStr;
+
             string initPath = @"d:\downloads"; //Directory.GetDirectoryRoot(Directory.GetCurrentDirectory());
 
-            ShowFileDirTree(initPath, 20);
+            (initPath, pauseOnStr) = InitFileManager();
+
+            ShowFileDirTree(initPath, pauseOnStr);
             Console.ReadLine();
         }
 
         private static void ShowFileDirTree(string pathForShow, int pauseOnString)
         {
             string[] strArr;
-            int tmp = 0;
+            int tmp = 1;
             Console.Clear();
             Console.WriteLine($"{pathForShow}"); //показали текущий каталог
 
@@ -27,6 +31,7 @@ namespace FileManager
                 Console.Write($"  [{strArr[strArr.Length - 1]}]");
                 Console.CursorLeft = 70;
                 Console.WriteLine(ElementInfo(directory));
+                CheckForPause();
                 try
                 {
                     foreach (var item in Directory.GetDirectories (directory) )
@@ -38,40 +43,54 @@ namespace FileManager
                     {
                         InnerShow(item, false);
                     }
-
-
                 }
                 catch (Exception)
                 {
 
                 }
+            }
+
+            foreach (var item in Directory.GetFiles(pathForShow, "*", SearchOption.TopDirectoryOnly))
+            {
+                strArr = item.Split('\\');
+
+                Console.Write($"  {strArr[strArr.Length - 1]}");
+                Console.CursorLeft = 70;
+                Console.WriteLine(ElementInfo(item));
+                CheckForPause();
+            }
+
+
+            void CheckForPause()
+            {
+                if (pauseOnString == tmp)
+                {
+                    tmp = 0;
+                    Console.Write("Для продолжения нажмите любую клавишу...");
+                    Console.ReadKey();
+                    Console.SetCursorPosition(0, Console.CursorTop--);
+                    Console.WriteLine("                                        \r");
+                }
+                tmp++;
+            }
+
+            void InnerShow(string item, bool isDirectory)
+            {
+                strArr = item.Split('\\');
+                if (isDirectory)
+                {
+                    Console.Write($"    [{strArr[strArr.Length-1]}]");
+                }
+                else
+                {
+                    Console.Write($"    {strArr[strArr.Length - 1]}");
+                }
+                Console.CursorLeft = 70;
+                Console.WriteLine(ElementInfo(item));
+                CheckForPause();
 
 
             }
-            void InnerShow(string item, bool isDirectory)
-                {
-                    strArr = item.Split('\\');
-                    if (isDirectory)
-                    {
-                        Console.Write($"    [{strArr[strArr.Length-1]}]");
-                    }
-                    else
-                    {
-                        Console.Write($"    {strArr[strArr.Length - 1]}");
-                    }
-                    Console.CursorLeft = 70;
-                    Console.WriteLine(ElementInfo(item));
-
-                    if (pauseOnString == tmp)
-                    {
-                        tmp = 0;
-                        Console.Write("Для продолжения нажмите любую клавишу...");
-                        Console.ReadKey();
-                        Console.SetCursorPosition(0, Console.CursorTop--);
-                        Console.Write("                                        \r");
-                    }
-                    tmp++;
-                }
         }
 
         private static string ElementInfo(string dirOrFileName)
@@ -125,6 +144,39 @@ namespace FileManager
                     return $"{length / 1000_000_000.0:F3} Гб";
                 }
             }
+        }
+
+        static (string path, int pause) InitFileManager()
+        {
+            string path;
+            int pause;
+            string[] strArr;
+            if (File.Exists(fileSettingsName))
+            {
+                strArr = File.ReadAllLines(fileSettingsName);
+                if (!string.IsNullOrEmpty(strArr[0]) && Directory.Exists(strArr[0]))
+                {
+                    path = strArr[0];
+                }
+                else
+                {
+                    path = Directory.GetDirectoryRoot(Directory.GetCurrentDirectory());
+                }
+
+                if ( strArr.Length > 1 && int.TryParse(strArr[1], out pause) )
+                {
+                    return (path, pause);
+                }
+                else
+                {
+                    return (path, 20);
+                }
+
+            }
+            return (Directory.GetDirectoryRoot(Directory.GetCurrentDirectory()), 20);
+
+
+
         }
 
     }
