@@ -12,41 +12,38 @@ namespace FileManager
             del,
             info,
         }
-        static int pauseOnStr;
-        static string initPath;
+        static int pauseOnStr; //значение пейджинга
+        static string currentDir; //текущий каталог
 
-        static string fileSettingsName = "settings.ini";
-        static void Main(string[] args)
+        const string fileSettingsName = "settings.ini";
+        static void Main()
         {
-            (initPath, pauseOnStr) = InitSettings();
-
+            (currentDir, pauseOnStr) = InitSettings();
+            
+            ShowFileDirTree(currentDir, int.MaxValue );
             while (true)
             {
                 UserDialog();
             }
-
-
-
-            //ShowFileDirTree(initPath, pauseOnStr);
-            Console.ReadLine();
         }
 
         static void UserDialog()
         {
-            Console.Write("CMD> ");
-            string[] cmd = Console.ReadLine().Split(' ');
+            Console.Write($"{currentDir}> ");
+            string userInputString = Console.ReadLine().Trim();
+            string[] userInputStringArr = userInputString.Split(' ');
             Command command = Command.help;
 
-            foreach (var item in cmd)
-            {
-                Enum.TryParse(typeof(Command), cmd[0], true, out object obj);
-                if (obj != null)
+            foreach (var item in userInputStringArr)
+            {// определяем команду из строки введенной пользователем
+                if (Enum.TryParse(typeof(Command), item, true, out object obj) && obj != null)
                 {
-                    command = (Command)obj;
+                    command = (Command)obj; //команда выяснена, далее удаляем её из строки
+                    userInputString = userInputString.Substring(userInputString.IndexOf(command.ToString()) + command.ToString().Length + 1);
                     break;
                 }
                 else
-                {
+                {//если команда не найдена - выводим помощь
                     command = Command.help;
                 }
             }
@@ -55,13 +52,17 @@ namespace FileManager
             switch (command)
             {
                 case Command.show:
-                    ShowFileDirTree(initPath, pauseOnStr);
+                    ShowFileDirTree(userInputString, pauseOnStr);
                     break;
                 case Command.copy:
                     Console.WriteLine("copy");
+                    //TODO Copy(userInputStringArr);
                     break;
                 case Command.del:
                     Console.WriteLine("del");
+
+                    Delete(userInputString);
+
                     break;
                 case Command.info:
                     Console.WriteLine("info");
@@ -78,12 +79,92 @@ namespace FileManager
 
         }
 
-
-        private static void ShowFileDirTree(string pathForShow, int pauseOnString)
+        private static void Delete(string userInputString)
         {
+
+            userInputString = userInputString.Trim();
+            userInputString = BuildFullPath(userInputString);
+            try
+            {
+                if ( Directory.Exists(userInputString) )
+                {
+                    Directory.Delete(userInputString, true);
+                    Console.WriteLine("Каталог удалён");
+                }
+                else if ( File.Exists(userInputString) )
+                {
+                    File.Delete(userInputString);
+                    Console.WriteLine("Файл удалён");
+                }
+                else
+                {
+                    Console.WriteLine("Объект для удаления не найден");
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("При попытке удаления произошла ошибка");
+            }
+        }
+
+        private static void Copy(string[] userInputString)
+        {
+            Console.WriteLine("\n\nСДЕЛАТЬ КОПИРОВАНИЕ");
+        }
+
+        private static string BuildFullPath(string userString)
+        {
+            userString = userString.Trim();
+            if (currentDir[currentDir.Length - 1] != '\\')
+            {
+                currentDir += '\\';
+            }
+
+            if (Directory.Exists(userString) || File.Exists(userString))
+            { //объект существует
+                return userString;
+            }
+            //объект не найден, пытаемся достроить путь
+            userString = currentDir + userString;
+
+            if (Directory.Exists(userString) || File.Exists(userString))
+            { //объект существует
+                return userString;
+            }
+
+            Console.WriteLine("Путь не найден");
+            return "";
+        }
+
+        private static void ShowFileDirTree(string userString, int pauseOnString)
+        {
+            string pathForShow = BuildFullPath(userString) ;
+
+            //userString = userString.Trim();
+            //if (currentDir[currentDir.Length-1] != '\\' )
+            //{
+            //    currentDir += '\\' ;
+            //}
+
+            //if (Directory.Exists(userString))
+            //{
+            //    pathForShow = userString;
+            //}
+            //else
+            //{
+            //    pathForShow = currentDir + userString;
+            //}
+            //if (!Directory.Exists(pathForShow))
+            //{
+            //    Console.WriteLine("Путь не найден");
+            //    return;
+            //}
+
+            currentDir = pathForShow;
+            SaveSettings(currentDir);
             string[] strArr;
-            int tmp = 1;
-            //Console.Clear();
+            int stringCounter = 1;
+
             Console.WriteLine($"{pathForShow}");
 
             foreach (var directory in Directory.GetDirectories(pathForShow, "*", SearchOption.TopDirectoryOnly)) //пробегаем текущий каталог
@@ -125,15 +206,15 @@ namespace FileManager
 
             void CheckForPause()
             {
-                if (pauseOnString == tmp)
+                if (pauseOnString == stringCounter)
                 {
-                    tmp = 0;
+                    stringCounter = 0;
                     Console.Write("Для продолжения нажмите любую клавишу...");
                     Console.ReadKey();
                     Console.SetCursorPosition(0, Console.CursorTop--);
                     Console.Write("                                        \r");
                 }
-                tmp++;
+                stringCounter++;
             }
 
             void InnerShow(string item, bool isDirectory)
@@ -151,6 +232,20 @@ namespace FileManager
                 Console.WriteLine(ElementInfo(item));
                 CheckForPause();
             }
+        }
+
+        private static void SaveSettings(string currentDir)
+        {
+            string[] settingsArr = { currentDir, pauseOnStr.ToString() };
+            try
+            {
+                File.WriteAllLines(fileSettingsName, settingsArr);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Неудается сохранить настройки");
+            }
+
         }
 
         private static string ElementInfo(string dirOrFileName)
@@ -209,7 +304,6 @@ namespace FileManager
         static (string path, int pause) InitSettings()
         {
             string path;
-            int pause;
             string[] strArr;
             if (File.Exists(fileSettingsName))
             {
@@ -223,7 +317,7 @@ namespace FileManager
                     path = Directory.GetDirectoryRoot(Directory.GetCurrentDirectory());
                 }
 
-                if ( strArr.Length > 1 && int.TryParse(strArr[1], out pause) )
+                if ( strArr.Length > 1 && int.TryParse(strArr[1], out int pause) )
                 {
                     return (path, pause);
                 }
