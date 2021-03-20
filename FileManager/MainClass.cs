@@ -4,25 +4,87 @@ namespace FileManager
 {
     class MainClass
     {
+        enum Command
+        {
+            help,
+            show,
+            copy,
+            del,
+            info,
+        }
+        static int pauseOnStr;
+        static string initPath;
+
         static string fileSettingsName = "settings.ini";
         static void Main(string[] args)
         {
-            int pauseOnStr;
+            (initPath, pauseOnStr) = InitSettings();
 
-            string initPath = @"d:\downloads"; //Directory.GetDirectoryRoot(Directory.GetCurrentDirectory());
+            while (true)
+            {
+                UserDialog();
+            }
 
-            (initPath, pauseOnStr) = InitFileManager();
 
-            ShowFileDirTree(initPath, pauseOnStr);
+
+            //ShowFileDirTree(initPath, pauseOnStr);
             Console.ReadLine();
         }
+
+        static void UserDialog()
+        {
+            Console.Write("CMD> ");
+            string[] cmd = Console.ReadLine().Split(' ');
+            Command command = Command.help;
+
+            foreach (var item in cmd)
+            {
+                Enum.TryParse(typeof(Command), cmd[0], true, out object obj);
+                if (obj != null)
+                {
+                    command = (Command)obj;
+                    break;
+                }
+                else
+                {
+                    command = Command.help;
+                }
+            }
+
+
+            switch (command)
+            {
+                case Command.show:
+                    ShowFileDirTree(initPath, pauseOnStr);
+                    break;
+                case Command.copy:
+                    Console.WriteLine("copy");
+                    break;
+                case Command.del:
+                    Console.WriteLine("del");
+                    break;
+                case Command.info:
+                    Console.WriteLine("info");
+                    break;
+                case Command.help:
+                    Console.WriteLine(Help.ToString());
+                    break;
+
+
+
+                default:
+                    break;
+            }
+
+        }
+
 
         private static void ShowFileDirTree(string pathForShow, int pauseOnString)
         {
             string[] strArr;
             int tmp = 1;
-            Console.Clear();
-            Console.WriteLine($"{pathForShow}"); //показали текущий каталог
+            //Console.Clear();
+            Console.WriteLine($"{pathForShow}");
 
             foreach (var directory in Directory.GetDirectories(pathForShow, "*", SearchOption.TopDirectoryOnly)) //пробегаем текущий каталог
             {
@@ -69,7 +131,7 @@ namespace FileManager
                     Console.Write("Для продолжения нажмите любую клавишу...");
                     Console.ReadKey();
                     Console.SetCursorPosition(0, Console.CursorTop--);
-                    Console.WriteLine("                                        \r");
+                    Console.Write("                                        \r");
                 }
                 tmp++;
             }
@@ -88,8 +150,6 @@ namespace FileManager
                 Console.CursorLeft = 70;
                 Console.WriteLine(ElementInfo(item));
                 CheckForPause();
-
-
             }
         }
 
@@ -146,7 +206,7 @@ namespace FileManager
             }
         }
 
-        static (string path, int pause) InitFileManager()
+        static (string path, int pause) InitSettings()
         {
             string path;
             int pause;
@@ -174,9 +234,6 @@ namespace FileManager
 
             }
             return (Directory.GetDirectoryRoot(Directory.GetCurrentDirectory()), 20);
-
-
-
         }
 
     }
