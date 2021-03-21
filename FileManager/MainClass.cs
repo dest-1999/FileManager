@@ -39,7 +39,7 @@ namespace FileManager
                 if (Enum.TryParse(typeof(Command), item, true, out object obj) && obj != null)
                 {
                     command = (Command)obj; //команда выяснена, далее удаляем её из строки
-                    userInputString = userInputString.Substring(userInputString.IndexOf(command.ToString()) + command.ToString().Length + 1);
+                    userInputString = userInputString.Substring(userInputString.IndexOf(command.ToString()) + command.ToString().Length + 1).Trim() ;
                     break;
                 }
                 else
@@ -56,15 +56,17 @@ namespace FileManager
                     break;
                 case Command.copy:
                     Console.WriteLine("copy");
-                    //TODO Copy(userInputStringArr);
+
+                    
+
+                    //TODO методов копирования директории нет
                     break;
                 case Command.del:
-                    Console.WriteLine("del");
-
                     Delete(userInputString);
-
                     break;
                 case Command.info:
+                    ElementInfo(userInputString);
+                    //AdditionalInfo
                     Console.WriteLine("info");
                     break;
                 case Command.help:
@@ -82,7 +84,7 @@ namespace FileManager
         private static void Delete(string userInputString)
         {
 
-            userInputString = userInputString.Trim();
+            //userInputString = userInputString.Trim();
             userInputString = BuildFullPath(userInputString);
             try
             {
@@ -114,7 +116,7 @@ namespace FileManager
 
         private static string BuildFullPath(string userString)
         {
-            userString = userString.Trim();
+            //userString = userString.Trim();
             if (currentDir[currentDir.Length - 1] != '\\')
             {
                 currentDir += '\\';
@@ -138,27 +140,12 @@ namespace FileManager
 
         private static void ShowFileDirTree(string userString, int pauseOnString)
         {
-            string pathForShow = BuildFullPath(userString) ;
+            string pathForShow = BuildFullPath(userString);
+            if (pathForShow == "")
+            {
+                return;
+            }
 
-            //userString = userString.Trim();
-            //if (currentDir[currentDir.Length-1] != '\\' )
-            //{
-            //    currentDir += '\\' ;
-            //}
-
-            //if (Directory.Exists(userString))
-            //{
-            //    pathForShow = userString;
-            //}
-            //else
-            //{
-            //    pathForShow = currentDir + userString;
-            //}
-            //if (!Directory.Exists(pathForShow))
-            //{
-            //    Console.WriteLine("Путь не найден");
-            //    return;
-            //}
 
             currentDir = pathForShow;
             SaveSettings(currentDir);
@@ -250,7 +237,8 @@ namespace FileManager
 
         private static string ElementInfo(string dirOrFileName)
         {
-            string[] strArr = dirOrFileName.Split('\\');
+            //dirOrFileName = dirOrFileName.Trim();
+            //string[] strArr = dirOrFileName.Split('\\');
             ulong size = 0;
             int files = 0,
                 dirs = 0;
@@ -327,7 +315,7 @@ namespace FileManager
                 }
 
             }
-            return (Directory.GetDirectoryRoot(Directory.GetCurrentDirectory()), 20);
+            return (Directory.GetCurrentDirectory(), 20);
         }
 
     }
