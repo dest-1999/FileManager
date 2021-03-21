@@ -65,9 +65,8 @@ namespace FileManager
                     Delete(userInputString);
                     break;
                 case Command.info:
-                    ElementInfo(userInputString);
-                    //AdditionalInfo
-                    Console.WriteLine("info");
+                    Console.WriteLine(AdditionalInfo(userInputString));
+                    
                     break;
                 case Command.help:
                     Console.WriteLine(Help.ToString());
@@ -79,6 +78,28 @@ namespace FileManager
                     break;
             }
 
+        }
+
+        private static string AdditionalInfo(string userInputString)
+        {
+            string obj = BuildFullPath(userInputString);
+            if (obj == "")
+            {
+                return "Объект не найден";
+            }
+            string additionalInfo;
+            if (Directory.Exists(obj))
+            {
+                DirectoryInfo di = new DirectoryInfo(obj);
+                additionalInfo = $"\nСоздан: {di.CreationTime}\tИзменен {di.LastWriteTime}";
+            }
+            else
+            {
+                FileInfo fi = new FileInfo(obj);
+                additionalInfo = $"\nСоздан: {fi.CreationTime}\tИзменен {fi.LastWriteTime}";
+            }
+
+            return ElementInfo(obj) + additionalInfo;
         }
 
         private static void Delete(string userInputString)
@@ -116,14 +137,13 @@ namespace FileManager
 
         private static string BuildFullPath(string userString)
         {
-            //userString = userString.Trim();
             if (currentDir[currentDir.Length - 1] != '\\')
             {
                 currentDir += '\\';
             }
 
             if (Directory.Exists(userString) || File.Exists(userString))
-            { //объект существует
+            { //объект существует и путь полный
                 return userString;
             }
             //объект не найден, пытаемся достроить путь
@@ -134,7 +154,6 @@ namespace FileManager
                 return userString;
             }
 
-            Console.WriteLine("Путь не найден");
             return "";
         }
 
@@ -143,6 +162,7 @@ namespace FileManager
             string pathForShow = BuildFullPath(userString);
             if (pathForShow == "")
             {
+                Console.WriteLine("Путь не найден");
                 return;
             }
 
