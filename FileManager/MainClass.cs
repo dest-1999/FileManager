@@ -39,7 +39,7 @@ namespace FileManager
                 if (Enum.TryParse(typeof(Command), item, true, out object obj) && obj != null)
                 {
                     command = (Command)obj; //команда выяснена, далее удаляем её из строки
-                    userInputString = userInputString.Substring(userInputString.IndexOf(command.ToString()) + command.ToString().Length + 1).Trim() ;
+                    userInputString = userInputString.Substring(userInputString.IndexOf(command.ToString()) + command.ToString().Length ).Trim() ;
                     break;
                 }
                 else
@@ -47,7 +47,6 @@ namespace FileManager
                     command = Command.help;
                 }
             }
-
 
             switch (command)
             {
@@ -57,8 +56,6 @@ namespace FileManager
                 case Command.copy:
                     Console.WriteLine("copy");
 
-                    
-
                     //TODO методов копирования директории нет
                     break;
                 case Command.del:
@@ -66,13 +63,10 @@ namespace FileManager
                     break;
                 case Command.info:
                     Console.WriteLine(AdditionalInfo(userInputString));
-                    
                     break;
                 case Command.help:
                     Console.WriteLine(Help.ToString());
                     break;
-
-
 
                 default:
                     break;
@@ -91,12 +85,12 @@ namespace FileManager
             if (Directory.Exists(obj))
             {
                 DirectoryInfo di = new DirectoryInfo(obj);
-                additionalInfo = $"\nСоздан: {di.CreationTime}\tИзменен {di.LastWriteTime}";
+                additionalInfo = $"\nСоздан: {di.CreationTime}\tИзменен {di.LastWriteTime}\nАтрибуты: {di.Attributes}";
             }
             else
             {
                 FileInfo fi = new FileInfo(obj);
-                additionalInfo = $"\nСоздан: {fi.CreationTime}\tИзменен {fi.LastWriteTime}";
+                additionalInfo = $"\nСоздан: {fi.CreationTime}\tИзменен {fi.LastWriteTime}\nАтрибуты: {fi.Attributes}";
             }
 
             return ElementInfo(obj) + additionalInfo;
@@ -104,8 +98,6 @@ namespace FileManager
 
         private static void Delete(string userInputString)
         {
-
-            //userInputString = userInputString.Trim();
             userInputString = BuildFullPath(userInputString);
             try
             {
