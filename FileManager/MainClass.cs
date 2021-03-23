@@ -54,9 +54,7 @@ namespace FileManager
                     ShowFileDirTree(userInputString, pauseOnStr);
                     break;
                 case Command.copy:
-                    Console.WriteLine("copy");
-
-                    //TODO методов копирования директории нет
+                    Copy(userInputString);
                     break;
                 case Command.del:
                     Delete(userInputString);
@@ -76,7 +74,7 @@ namespace FileManager
 
         private static string AdditionalInfo(string userInputString)
         {
-            string obj = BuildFullPath(userInputString);
+            string obj = CheckPathBuildFullPath(userInputString);
             if (obj == "")
             {
                 return "Объект не найден";
@@ -98,7 +96,7 @@ namespace FileManager
 
         private static void Delete(string userInputString)
         {
-            userInputString = BuildFullPath(userInputString);
+            userInputString = CheckPathBuildFullPath(userInputString);
             try
             {
                 if ( Directory.Exists(userInputString) )
@@ -116,18 +114,130 @@ namespace FileManager
                     Console.WriteLine("Объект для удаления не найден");
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine("При попытке удаления произошла ошибка");
+                Console.WriteLine($"При попытке удаления произошла ошибка\n{e}");
             }
         }
 
-        private static void Copy(string[] userInputString)
-        {
-            Console.WriteLine("\n\nСДЕЛАТЬ КОПИРОВАНИЕ");
+        private static void Copy(string userInputString)
+      {
+            string source = "", destination = "";
+            string[] strArr = userInputString.Split(' ');
+            int i = 1;
+            if (!strArr[0].Contains(':') )
+            {// путь источника относительный, достраиваем до абсолютного и начинаем проверять наличие объекта-источника
+                if (currentDir[currentDir.Length - 1] != '\\' & strArr[0][0] != '\\' )
+                {
+                    currentDir += '\\';
+                }
+                source = currentDir + strArr[0];
+            }
+            else
+            {
+                source = strArr[0];
+            }
+            for ( ; !(Directory.Exists(source) || File.Exists(source)) & i < strArr.Length ; i++)
+            {
+                source += " " + strArr[i];
+            }
+            //пытаемся построить путь приёмника на основе остатков массива
+            for ( ; i < strArr.Length; i++)
+            {
+                if (destination != "")
+                {
+                    destination += " ";
+                }
+                destination += strArr[i];
+            }
+
+            if (destination != "" && destination[1] != ':' )
+            {// путь приёмника относительный, достраиваем
+                if (currentDir[currentDir.Length - 1] != '\\' & destination[0] != '\\')
+                {
+                    currentDir += '\\';
+                }
+                destination = currentDir + destination;
+            }
+
+            if (!(Directory.Exists(source) || File.Exists(source)) || destination == "" )
+            {//если объект-источник не найден или объект-приёмник не указан, то выходим из метода
+                Console.WriteLine("Объект не найден, проверьте параметры");
+                Console.WriteLine(Help.ToString());
+                return;
+            }
+
+            if (Directory.Exists(destination) || File.Exists(destination))
+            {
+                Console.WriteLine("Объект с таким названием уже существует, указанное действие невозможно");
+                return;
+            }
+            
+            if (File.Exists(source))
+            {
+                Console.WriteLine("Копируем файл");
+                File.Copy(source, destination);
+            }
+            else
+            {
+                
+
+
+                DirCopy(new DirectoryInfo(source), new DirectoryInfo(destination));
+            }
+
         }
 
-        private static string BuildFullPath(string userString)
+        private static void DirCopy(DirectoryInfo source, DirectoryInfo destination)
+        {
+            if (source.FullName.ToLower() == destination.FullName.ToLower())
+            {
+                return;
+            }
+
+            if (!Directory.Exists(destination.FullName)) // == false)
+            {
+                Directory.CreateDirectory(destination.FullName);
+            }
+
+
+            try
+            {
+                foreach (FileInfo fi in source.GetFiles())
+                {
+                    fi.CopyTo(Path.Combine(destination.ToString(), fi.Name), true);
+                }
+
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
+            try
+            {
+                foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
+                {
+                    DirectoryInfo nextTargetSubDir = destination.CreateSubdirectory(diSourceSubDir.Name);
+                    DirCopy(diSourceSubDir, nextTargetSubDir);
+                }
+
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
+
+
+
+
+
+        }
+
+        private static string CheckPathBuildFullPath(string userString)
         {
             if (currentDir[currentDir.Length - 1] != '\\')
             {
@@ -151,7 +261,7 @@ namespace FileManager
 
         private static void ShowFileDirTree(string userString, int pauseOnString)
         {
-            string pathForShow = BuildFullPath(userString);
+            string pathForShow = CheckPathBuildFullPath(userString);
             if (pathForShow == "")
             {
                 Console.WriteLine("Путь не найден");
@@ -186,9 +296,9 @@ namespace FileManager
                         InnerShow(item, false);
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-
+                    Console.WriteLine($"Произошла ошибка\n{e}");
                 }
             }
 
@@ -235,7 +345,7 @@ namespace FileManager
 
         private static void SaveSettings(string currentDir)
         {
-            string[] settingsArr = { currentDir, pauseOnStr.ToString() };
+            string[] settingsArr = { currentDir, "stringsOnPage=" + pauseOnStr.ToString() };
             try
             {
                 File.WriteAllLines(fileSettingsName, settingsArr);
@@ -268,16 +378,25 @@ namespace FileManager
                     }
 
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Console.WriteLine($"Произошла ошибка\n{e}");
                 }
                 //return $"{strArr[strArr.Length - 1]}Подкаталогов: {dirs}, Файлов: {files}, Объем: {ConvertSizeInfo(size)}";
                 return $"Подкаталогов: {dirs}, Файлов: {files}, Объем: {ConvertSizeInfo(size)}";
             }
             else //нет, это файл
             {
-                FileInfo info = new FileInfo(dirOrFileName);
-                return $"{ ConvertSizeInfo((ulong)info.Length) }";
+                try
+                {
+                    FileInfo info = new FileInfo(dirOrFileName);
+                    return $"{ ConvertSizeInfo((ulong)info.Length) }";
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                return "";
             }
 
             static string ConvertSizeInfo(ulong length)
@@ -304,26 +423,29 @@ namespace FileManager
         static (string path, int pause) InitSettings()
         {
             string path;
-            string[] strArr;
             if (File.Exists(fileSettingsName))
             {
-                strArr = File.ReadAllLines(fileSettingsName);
+                string[] strArr = File.ReadAllLines(fileSettingsName);
                 if (!string.IsNullOrEmpty(strArr[0]) && Directory.Exists(strArr[0]))
                 {
                     path = strArr[0];
                 }
                 else
                 {
-                    path = Directory.GetDirectoryRoot(Directory.GetCurrentDirectory());
+                    path = Directory.GetCurrentDirectory();
                 }
 
-                if ( strArr.Length > 1 && int.TryParse(strArr[1], out int pause) )
+                if (strArr.Length > 1 && strArr[1].Contains('='))
                 {
-                    return (path, pause);
-                }
-                else
-                {
-                    return (path, 20);
+                    string[] s = strArr[1].Split('=');
+                    if (int.TryParse(s[s.Length - 1].Trim(), out int pause))
+                    {
+                        return (path, pause);
+                    }
+                    else
+                    {
+                        return (path, 20);
+                    }
                 }
 
             }
