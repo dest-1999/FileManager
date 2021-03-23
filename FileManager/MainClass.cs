@@ -14,7 +14,7 @@ namespace FileManager
         }
         static int pauseOnStr; //значение пейджинга
         static string currentDir; //текущий каталог
-
+        static string errorLog = $"errors\\{Path.GetRandomFileName()}_exeption.txt";
         const string fileSettingsName = "settings.ini";
         static void Main()
         {
@@ -211,7 +211,7 @@ namespace FileManager
             }
             catch (Exception e)
             {
-
+                ErrorLog(e);
                 Console.WriteLine(e);
             }
 
@@ -226,7 +226,7 @@ namespace FileManager
             }
             catch (Exception e)
             {
-
+                ErrorLog(e);
                 Console.WriteLine(e);
             }
 
@@ -268,7 +268,6 @@ namespace FileManager
                 return;
             }
 
-
             currentDir = pathForShow;
             SaveSettings(currentDir);
             string[] strArr;
@@ -298,7 +297,8 @@ namespace FileManager
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Произошла ошибка\n{e}");
+                    ErrorLog(e);
+                    Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
             }
 
@@ -343,6 +343,16 @@ namespace FileManager
             }
         }
 
+        private static void ErrorLog(Exception e)
+        {
+            if (!Directory.Exists("errors"))
+            {
+                Directory.CreateDirectory("errors");
+            }
+            
+            File.AppendAllText(errorLog, $"{DateTime.Now} возникла ошибка:\n{e}\n\n");
+        }
+
         private static void SaveSettings(string currentDir)
         {
             string[] settingsArr = { currentDir, "stringsOnPage=" + pauseOnStr.ToString() };
@@ -350,8 +360,9 @@ namespace FileManager
             {
                 File.WriteAllLines(fileSettingsName, settingsArr);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                ErrorLog(e);
                 Console.WriteLine("Неудается сохранить настройки");
             }
 
@@ -380,7 +391,8 @@ namespace FileManager
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Произошла ошибка\n{e}");
+                    ErrorLog(e);
+                    Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
                 //return $"{strArr[strArr.Length - 1]}Подкаталогов: {dirs}, Файлов: {files}, Объем: {ConvertSizeInfo(size)}";
                 return $"Подкаталогов: {dirs}, Файлов: {files}, Объем: {ConvertSizeInfo(size)}";
@@ -394,7 +406,8 @@ namespace FileManager
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    ErrorLog(e);
+                    Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
                 return "";
             }
