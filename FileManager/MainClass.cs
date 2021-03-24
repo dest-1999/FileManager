@@ -30,7 +30,7 @@ namespace FileManager
         static void UserDialog()
         {
             Console.Write($"{currentDir}> ");
-            string userInputString = Console.ReadLine().Trim();
+            string userInputString = Console.ReadLine().Trim().ToLower();
             string[] userInputStringArr = userInputString.Split(' ');
             Command command = Command.help;
 
@@ -91,7 +91,7 @@ namespace FileManager
                 additionalInfo = $"\nСоздан: {fi.CreationTime}\tИзменен {fi.LastWriteTime}\nАтрибуты: {fi.Attributes}";
             }
 
-            return ElementInfo(obj) + additionalInfo;
+            return GetElementInfo(obj) + additionalInfo;
         }
 
         private static void Delete(string userInputString)
@@ -116,12 +116,13 @@ namespace FileManager
             }
             catch (Exception e)
             {
+                WriteErrorLog(e);
                 Console.WriteLine($"При попытке удаления произошла ошибка\n{e}");
             }
         }
 
         private static void Copy(string userInputString)
-      {
+        {
             string source = "", destination = "";
             string[] strArr = userInputString.Split(' ');
             int i = 1;
@@ -169,7 +170,7 @@ namespace FileManager
 
             if (Directory.Exists(destination) || File.Exists(destination))
             {
-                Console.WriteLine("Объект с таким названием уже существует, указанное действие невозможно");
+                Console.WriteLine("Объект с таким названием уже существует, указанное действие невозможно.\nИзмените путь или название");
                 return;
             }
             
@@ -180,12 +181,8 @@ namespace FileManager
             }
             else
             {
-                
-
-
                 DirCopy(new DirectoryInfo(source), new DirectoryInfo(destination));
             }
-
         }
 
         private static void DirCopy(DirectoryInfo source, DirectoryInfo destination)
@@ -195,11 +192,10 @@ namespace FileManager
                 return;
             }
 
-            if (!Directory.Exists(destination.FullName)) // == false)
+            if (!Directory.Exists(destination.FullName))
             {
                 Directory.CreateDirectory(destination.FullName);
             }
-
 
             try
             {
@@ -207,11 +203,10 @@ namespace FileManager
                 {
                     fi.CopyTo(Path.Combine(destination.ToString(), fi.Name), true);
                 }
-
             }
             catch (Exception e)
             {
-                ErrorLog(e);
+                WriteErrorLog(e);
                 Console.WriteLine(e);
             }
 
@@ -222,19 +217,12 @@ namespace FileManager
                     DirectoryInfo nextTargetSubDir = destination.CreateSubdirectory(diSourceSubDir.Name);
                     DirCopy(diSourceSubDir, nextTargetSubDir);
                 }
-
             }
             catch (Exception e)
             {
-                ErrorLog(e);
+                WriteErrorLog(e);
                 Console.WriteLine(e);
             }
-
-
-
-
-
-
         }
 
         private static string CheckPathBuildFullPath(string userString)
@@ -281,34 +269,34 @@ namespace FileManager
 
                 Console.Write($"  [{strArr[strArr.Length - 1]}]");
                 Console.CursorLeft = 70;
-                Console.WriteLine(ElementInfo(directory));
+                Console.WriteLine(GetElementInfo(directory));
                 CheckForPause();
                 try
                 {
                     foreach (var item in Directory.GetDirectories (directory) )
-                    {
+                    {//показываем подкаталоги
                         InnerShow(item, true);
                     }
 
                     foreach (var item in Directory.GetFiles (directory))
-                    {
+                    {//показываем файлы в подкаталогах
                         InnerShow(item, false);
                     }
                 }
                 catch (Exception e)
                 {
-                    ErrorLog(e);
+                    WriteErrorLog(e);
                     Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
             }
 
             foreach (var item in Directory.GetFiles(pathForShow, "*", SearchOption.TopDirectoryOnly))
-            {
+            {//показываем оставшиеся файлы в каталоге
                 strArr = item.Split('\\');
 
                 Console.Write($"  {strArr[strArr.Length - 1]}");
                 Console.CursorLeft = 70;
-                Console.WriteLine(ElementInfo(item));
+                Console.WriteLine(GetElementInfo(item));
                 CheckForPause();
             }
 
@@ -338,12 +326,12 @@ namespace FileManager
                     Console.Write($"    {strArr[strArr.Length - 1]}");
                 }
                 Console.CursorLeft = 70;
-                Console.WriteLine(ElementInfo(item));
+                Console.WriteLine(GetElementInfo(item));
                 CheckForPause();
             }
         }
 
-        private static void ErrorLog(Exception e)
+        private static void WriteErrorLog(Exception e)
         {
             if (!Directory.Exists("errors"))
             {
@@ -362,16 +350,14 @@ namespace FileManager
             }
             catch (Exception e)
             {
-                ErrorLog(e);
+                WriteErrorLog(e);
                 Console.WriteLine("Неудается сохранить настройки");
             }
 
         }
 
-        private static string ElementInfo(string dirOrFileName)
+        private static string GetElementInfo(string dirOrFileName)
         {
-            //dirOrFileName = dirOrFileName.Trim();
-            //string[] strArr = dirOrFileName.Split('\\');
             ulong size = 0;
             int files = 0,
                 dirs = 0;
@@ -391,10 +377,10 @@ namespace FileManager
                 }
                 catch (Exception e)
                 {
-                    ErrorLog(e);
+                    WriteErrorLog(e);
                     Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
-                //return $"{strArr[strArr.Length - 1]}Подкаталогов: {dirs}, Файлов: {files}, Объем: {ConvertSizeInfo(size)}";
+                
                 return $"Подкаталогов: {dirs}, Файлов: {files}, Объем: {ConvertSizeInfo(size)}";
             }
             else //нет, это файл
@@ -406,7 +392,7 @@ namespace FileManager
                 }
                 catch (Exception e)
                 {
-                    ErrorLog(e);
+                    WriteErrorLog(e);
                     Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
                 return "";
