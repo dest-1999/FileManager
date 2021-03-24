@@ -184,7 +184,7 @@ namespace FileManager
                 catch (Exception e)
                 {
                     WriteErrorLog(e);
-                    Console.WriteLine(e);
+                    Console.WriteLine($"\nПроизошла ошибка\n{e}");
                 }
             }
             else
@@ -215,7 +215,7 @@ namespace FileManager
             catch (Exception e)
             {
                 WriteErrorLog(e);
-                Console.WriteLine(e);
+                Console.WriteLine($"\nПроизошла ошибка\n{e}");
             }
 
             try
@@ -229,7 +229,7 @@ namespace FileManager
             catch (Exception e)
             {
                 WriteErrorLog(e);
-                Console.WriteLine(e);
+                Console.WriteLine($"\nПроизошла ошибка\n{e}");
             }
         }
 
