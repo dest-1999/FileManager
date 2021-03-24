@@ -176,8 +176,16 @@ namespace FileManager
             
             if (File.Exists(source))
             {
-                Console.WriteLine("Копируем файл");
-                File.Copy(source, destination);
+                try
+                {
+                    File.Copy(source, destination);
+                    Console.WriteLine("Копирование завершено");
+                }
+                catch (Exception e)
+                {
+                    WriteErrorLog(e);
+                    Console.WriteLine(e);
+                }
             }
             else
             {
@@ -262,44 +270,58 @@ namespace FileManager
             int stringCounter = 1;
 
             Console.WriteLine($"{pathForShow}");
-
-            foreach (var directory in Directory.GetDirectories(pathForShow, "*", SearchOption.TopDirectoryOnly)) //пробегаем текущий каталог
+            try
             {
-                strArr = directory.Split('\\');
-
-                Console.Write($"  [{strArr[strArr.Length - 1]}]");
-                Console.CursorLeft = 70;
-                Console.WriteLine(GetElementInfo(directory));
-                CheckForPause();
-                try
+                foreach (var directory in Directory.GetDirectories(pathForShow, "*", SearchOption.TopDirectoryOnly)) //пробегаем текущий каталог
                 {
-                    foreach (var item in Directory.GetDirectories (directory) )
-                    {//показываем подкаталоги
-                        InnerShow(item, true);
-                    }
+                    strArr = directory.Split('\\');
 
-                    foreach (var item in Directory.GetFiles (directory))
-                    {//показываем файлы в подкаталогах
-                        InnerShow(item, false);
+                    Console.Write($"  [{strArr[strArr.Length - 1]}]");
+                    Console.CursorLeft = 70;
+                    Console.WriteLine(GetElementInfo(directory));
+                    CheckForPause();
+                    try
+                    {
+                        foreach (var item in Directory.GetDirectories (directory) )
+                        {//показываем подкаталоги
+                            InnerShow(item, true);
+                        }
+
+                        foreach (var item in Directory.GetFiles (directory))
+                        {//показываем файлы в подкаталогах
+                            InnerShow(item, false);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        WriteErrorLog(e);
+                        Console.WriteLine($"\nПроизошла ошибка\n{e}");
                     }
                 }
-                catch (Exception e)
-                {
-                    WriteErrorLog(e);
-                    Console.WriteLine($"\nПроизошла ошибка\n{e}");
+            }
+            catch (Exception e)
+            {
+                WriteErrorLog(e);
+                Console.WriteLine($"\nПроизошла ошибка\n{e}");
+            }
+
+            try
+            {
+                foreach (var item in Directory.GetFiles(pathForShow, "*", SearchOption.TopDirectoryOnly))
+                {//показываем оставшиеся файлы в каталоге
+                    strArr = item.Split('\\');
+
+                    Console.Write($"  {strArr[strArr.Length - 1]}");
+                    Console.CursorLeft = 70;
+                    Console.WriteLine(GetElementInfo(item));
+                    CheckForPause();
                 }
             }
-
-            foreach (var item in Directory.GetFiles(pathForShow, "*", SearchOption.TopDirectoryOnly))
-            {//показываем оставшиеся файлы в каталоге
-                strArr = item.Split('\\');
-
-                Console.Write($"  {strArr[strArr.Length - 1]}");
-                Console.CursorLeft = 70;
-                Console.WriteLine(GetElementInfo(item));
-                CheckForPause();
+            catch (Exception e)
+            {
+                WriteErrorLog(e);
+                Console.WriteLine($"\nПроизошла ошибка\n{e}");
             }
-
 
             void CheckForPause()
             {
@@ -334,7 +356,7 @@ namespace FileManager
         private static void WriteErrorLog(Exception e)
         {
             if (!Directory.Exists("errors"))
-            {
+            {//если каталога для файлов с ошибками нет, то создаём
                 Directory.CreateDirectory("errors");
             }
             
